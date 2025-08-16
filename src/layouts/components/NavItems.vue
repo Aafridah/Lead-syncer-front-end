@@ -40,6 +40,45 @@ import VerticalNavLink from '@layouts/components/VerticalNavLink.vue';
     }"
   />
 
+  <!-- 👉 Agent Management -->
+  <VerticalNavSectionTitle
+    :item="{
+      heading: 'Agent Management',
+    }"
+  />
+
+  <VerticalNavLink
+    :item="{
+      title: 'Teams',
+      icon: 'bx-building',
+      to: '/teams',
+    }"
+  />
+
+  <VerticalNavLink
+    :item="{
+      title: 'Roles',
+      icon: 'bx-shield',
+      to: '/roles',
+    }"
+  />
+
+  <VerticalNavLink
+    :item="{
+      title: 'Agents',
+      icon: 'bx-user-check',
+      to: '/agents',
+    }"
+  />
+
+  <VerticalNavLink
+    :item="{
+      title: 'API Test',
+      icon: 'bx-bug',
+      to: '/api-test',
+    }"
+  />
+
   <VerticalNavLink
     :item="{
       title: 'Login',

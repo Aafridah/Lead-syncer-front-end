@@ -1,23 +1,23 @@
 <script lang="ts" setup>
-import { useTeamsStore } from '@/stores/teams'
+import { useRolesStore } from '@/stores/roles'
 import { onMounted } from 'vue'
 
-// Use the teams store
-const teamsStore = useTeamsStore()
+// Use the roles store
+const rolesStore = useRolesStore()
 
 // Local state for UI
 const search = ref('')
 const selected = ref<any[]>([])
 const itemsPerPage = ref(10)
 const page = ref(1)
-const sortBy = ref([{ key: 'name', order: 'asc' as const }])
+const sortBy = ref([{ key: 'RoleName', order: 'asc' as const }])
 const sortDesc = ref([false])
 
 // Dialog states
 const showAddDialog = ref(false)
 const showEditDialog = ref(false)
 const showDeleteDialog = ref(false)
-const selectedTeam = ref<any | null>(null)
+const selectedRole = ref<any | null>(null)
 
 // Computed property for dialog visibility
 const showDialog = computed({
@@ -31,117 +31,106 @@ const showDialog = computed({
 })
 
 // Form data
-const teamForm = ref<{
-  name: string
+const roleForm = ref<{
+  roleName: string
+  leadAccessType: string | null
 }>({
-  name: ''
+  roleName: '',
+  leadAccessType: null
 })
 
 const headers = [
-  { title: 'Team ID', key: 'TeamId', sortable: true },
+  { title: 'Role ID', key: 'RoleId', sortable: true },
   { title: 'Company ID', key: 'CompanyId', sortable: true },
-  { title: 'Team Name', key: 'Name', sortable: true },
-  { title: 'Created By', key: 'TeamCreatedBy', sortable: true },
-  { title: 'Created Date', key: 'TeamCreatedDateTime', sortable: true },
+  { title: 'Role Name', key: 'RoleName', sortable: true },
+  { title: 'Lead Access Type', key: 'LeadAccessType', sortable: true },
+  { title: 'Created By', key: 'RoleCreatedBy', sortable: true },
+  { title: 'Created Date', key: 'RoleCreatedDateTime', sortable: true },
   { title: 'Actions', key: 'actions', sortable: false }
 ]
 
 // Computed properties
-const filteredTeams = computed(() => {
-  console.log('Current teams data:', teamsStore.getTeams)
+const filteredRoles = computed(() => {
+  if (!search.value) return rolesStore.getRoles
   
-  if (!search.value) return teamsStore.getTeams
-  
-  return teamsStore.getTeams.filter((team: any) => 
-    team.Name?.toLowerCase().includes(search.value.toLowerCase()) ||
-    team.TeamId?.toString().includes(search.value) ||
-    team.TeamCreatedBy?.toLowerCase().includes(search.value.toLowerCase())
+  return rolesStore.getRoles.filter((role: any) => 
+    role.RoleName?.toLowerCase().includes(search.value.toLowerCase()) ||
+    role.RoleId?.toString().includes(search.value)
   )
 })
 
-const paginatedTeams = computed(() => {
+const paginatedRoles = computed(() => {
   const start = (page.value - 1) * itemsPerPage.value
   const end = start + itemsPerPage.value
-  const result = filteredTeams.value.slice(start, end)
-  console.log('Paginated teams:', result)
-  return result
+  return filteredRoles.value.slice(start, end)
 })
 
-const totalPages = computed(() => Math.ceil(filteredTeams.value.length / itemsPerPage.value))
+const totalPages = computed(() => Math.ceil(filteredRoles.value.length / itemsPerPage.value))
 
 // Methods
 const openAddDialog = () => {
-  teamForm.value = { name: '' }
+  roleForm.value = { roleName: '', leadAccessType: null }
   showAddDialog.value = true
 }
 
-const openEditDialog = (team: any) => {
-  selectedTeam.value = team
-  teamForm.value = { name: team.name || '' }
+const openEditDialog = (role: any) => {
+  selectedRole.value = role
+  roleForm.value = { 
+    roleName: role.RoleName || '', 
+    leadAccessType: role.LeadAccessType || null 
+  }
   showEditDialog.value = true
 }
 
-const openDeleteDialog = (team: any) => {
-  selectedTeam.value = team
+const openDeleteDialog = (role: any) => {
+  selectedRole.value = role
   showDeleteDialog.value = true
 }
 
-const saveTeam = async () => {
+const saveRole = async () => {
   try {
-    if (showEditDialog.value && selectedTeam.value) {
-      // Edit existing team
-      await teamsStore.updateTeam({
-        teamId: selectedTeam.value.teamId,
-        companyId: selectedTeam.value.companyId,
-        name: teamForm.value.name
+    if (showEditDialog.value && selectedRole.value) {
+      // Edit existing role
+      await rolesStore.updateRole({
+        ...selectedRole.value,
+        RoleName: roleForm.value.roleName,
+        LeadAccessType: roleForm.value.leadAccessType
       })
     } else {
-      // Add new team
-      await teamsStore.addTeam({
-        companyId: 1, // Default company ID - adjust as needed
-        name: teamForm.value.name
+      // Add new role
+      await rolesStore.addRole({
+        CompanyId: 1, // Default company ID - adjust as needed
+        RoleName: roleForm.value.roleName,
+        LeadAccessType: roleForm.value.leadAccessType
       })
     }
     
     showAddDialog.value = false
     showEditDialog.value = false
-    selectedTeam.value = null
+    selectedRole.value = null
   } catch (error) {
-    console.error('Error saving team:', error)
+    console.error('Error saving role:', error)
   }
 }
 
-const deleteTeam = async () => {
-  if (selectedTeam.value) {
+const deleteRole = async () => {
+  if (selectedRole.value) {
     try {
-      await teamsStore.deleteTeam(selectedTeam.value.teamId)
+      await rolesStore.deleteRole(selectedRole.value.RoleId)
       showDeleteDialog.value = false
-      selectedTeam.value = null
+      selectedRole.value = null
     } catch (error) {
-      console.error('Error deleting team:', error)
+      console.error('Error deleting role:', error)
     }
   }
 }
 
-// Load teams on component mount
+// Load roles on component mount
 onMounted(async () => {
   // Only fetch if we don't already have data and not currently loading
-  if (teamsStore.getTeams.length === 0 && !teamsStore.isLoading) {
-    console.log('Teams component mounted - fetching teams...')
-    await teamsStore.fetchTeams()
-  } else {
-    console.log('Teams component mounted - data already available or loading in progress')
+  if (rolesStore.getRoles.length === 0 && !rolesStore.isLoading) {
+    await rolesStore.fetchRoles()
   }
-  
-  // Debug: Log the current state after a short delay
-  setTimeout(() => {
-    console.log('Teams store state:', {
-      teams: teamsStore.getTeams,
-      loading: teamsStore.isLoading,
-      error: teamsStore.getError,
-      teamsLength: teamsStore.getTeams.length
-    })
-  }, 1000)
 })
 </script>
 
@@ -151,10 +140,10 @@ onMounted(async () => {
     <div class="d-flex justify-space-between align-center mb-6">
       <div>
         <h4 class="text-h4 mb-1">
-          Manage Teams
+          Manage Roles
         </h4>
         <p class="text-body-1 text-medium-emphasis">
-          Create and manage teams for your organization
+          Create and manage roles for your organization
         </p>
       </div>
       <VBtn
@@ -162,7 +151,7 @@ onMounted(async () => {
         prepend-icon="bx-plus"
         @click="openAddDialog"
       >
-        Add Team
+        Add Role
       </VBtn>
     </div>
 
@@ -173,7 +162,7 @@ onMounted(async () => {
           <VTextField
             v-model="search"
             prepend-inner-icon="bx-search"
-            placeholder="Search teams..."
+            placeholder="Search roles..."
             density="compact"
             hide-details
             style="max-inline-size: 300px;"
@@ -182,51 +171,35 @@ onMounted(async () => {
       </VCardText>
     </VCard>
 
-    <!-- Teams Table -->
+    <!-- Roles Table -->
     <VCard>
       <VCardText>
-        <div v-if="teamsStore.isLoading" class="d-flex justify-center py-8">
+        <div v-if="rolesStore.isLoading" class="d-flex justify-center py-8">
           <VProgressCircular indeterminate />
         </div>
         
-        <div v-else-if="teamsStore.getError" class="d-flex justify-center py-8">
-          <VAlert type="error" :text="teamsStore.getError" />
+        <div v-else-if="rolesStore.getError" class="d-flex justify-center py-8">
+          <VAlert type="error" :text="rolesStore.getError" />
         </div>
         
         <div v-else>
-
-          
-          <div v-if="paginatedTeams.length === 0" class="text-center py-8">
-            <VIcon size="48" icon="bx-building" class="text-medium-emphasis mb-4" />
-            <p class="text-h6 text-medium-emphasis mb-2">No teams found</p>
-            <p class="text-body-2 text-medium-emphasis">Create your first team to get started.</p>
+          <div v-if="paginatedRoles.length === 0" class="text-center py-8">
+            <VIcon size="48" icon="bx-shield" class="text-medium-emphasis mb-4" />
+            <p class="text-h6 text-medium-emphasis mb-2">No roles found</p>
+            <p class="text-body-2 text-medium-emphasis">Create your first role to get started.</p>
           </div>
           
           <VDataTable
             v-else
             :headers="headers"
-            :items="paginatedTeams"
+            :items="paginatedRoles"
             :items-per-page="itemsPerPage"
             :sort-by="sortBy"
             :sort-desc="sortDesc"
             @update:sort-by="sortBy = $event"
             @update:sort-desc="sortDesc = $event"
             class="text-no-wrap"
-            item-value="teamId"
           >
-            <!-- Team Name Column (Debug) -->
-            <template #item.Name="{ item }">
-              <div>
-                <strong>{{ item.Name }}</strong>
-                <div class="text-caption text-medium-emphasis">ID: {{ item.TeamId }}</div>
-              </div>
-            </template>
-
-            <!-- Created Date Column -->
-            <template #item.TeamCreatedDateTime="{ item }">
-              {{ item.TeamCreatedDateTime ? new Date(item.TeamCreatedDateTime).toLocaleDateString() : 'N/A' }}
-            </template>
-
             <!-- Actions Column -->
             <template #item.actions="{ item }">
               <div class="d-flex gap-2">
@@ -262,7 +235,7 @@ onMounted(async () => {
       </VCardText>
     </VCard>
 
-    <!-- Add/Edit Team Dialog -->
+    <!-- Add/Edit Role Dialog -->
     <VDialog
       v-model="showDialog"
       max-inline-size="600px"
@@ -270,16 +243,21 @@ onMounted(async () => {
     >
       <VCard>
         <VCardTitle>
-          {{ showEditDialog ? 'Edit Team' : 'Add New Team' }}
+          {{ showEditDialog ? 'Edit Role' : 'Add New Role' }}
         </VCardTitle>
         
         <VCardText>
-          <VForm @submit.prevent="saveTeam">
+          <VForm @submit.prevent="saveRole">
             <VTextField
-              v-model="teamForm.name"
-              label="Team Name"
+              v-model="roleForm.roleName"
+              label="Role Name"
               required
-              :rules="[v => !!v || 'Team name is required']"
+              :rules="[v => !!v || 'Role name is required']"
+            />
+            <VTextField
+              v-model="roleForm.leadAccessType"
+              label="Lead Access Type"
+              class="mt-4"
             />
           </VForm>
         </VCardText>
@@ -295,8 +273,8 @@ onMounted(async () => {
           </VBtn>
           <VBtn
             color="primary"
-            @click="saveTeam"
-            :loading="teamsStore.isLoading"
+            @click="saveRole"
+            :loading="rolesStore.isLoading"
           >
             {{ showEditDialog ? 'Update' : 'Create' }}
           </VBtn>
@@ -316,7 +294,7 @@ onMounted(async () => {
         </VCardTitle>
         
         <VCardText>
-          Are you sure you want to delete the team "{{ selectedTeam?.name }}"?
+          Are you sure you want to delete the role "{{ selectedRole?.roleName }}"?
           This action cannot be undone.
         </VCardText>
         
@@ -331,8 +309,8 @@ onMounted(async () => {
           </VBtn>
           <VBtn
             color="error"
-            @click="deleteTeam"
-            :loading="teamsStore.isLoading"
+            @click="deleteRole"
+            :loading="rolesStore.isLoading"
           >
             Delete
           </VBtn>

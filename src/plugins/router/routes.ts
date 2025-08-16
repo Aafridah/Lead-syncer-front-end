@@ -41,6 +41,22 @@ export const routes = [
         path: 'form-layouts',
         component: () => import('@/pages/form-layouts.vue'),
       },
+      {
+        path: 'teams',
+        component: () => import('@/pages/teams.vue'),
+      },
+      {
+        path: 'roles',
+        component: () => import('@/pages/roles.vue'),
+      },
+      {
+        path: 'agents',
+        component: () => import('@/pages/agents.vue'),
+      },
+      {
+        path: 'api-test',
+        component: () => import('@/pages/api-test.vue'),
+      },
     ],
   },
   {
